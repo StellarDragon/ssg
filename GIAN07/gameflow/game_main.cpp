@@ -941,6 +941,7 @@ void GameContinue() {
 
 void GameProc(bool & /*unused*/) {
   if (ConfigDat.AutoPlay.v == AUTOPLAY_ON && !GameState.is_demoplay) {
+    AutoPlay.SetDifficulty(ConfigDat.AutoPlayDifficulty.v);
     INPUT_BITS real_input = Key_Data;
     Key_Data = AutoPlay.Update();
     Key_Data |= (real_input & (KEY_ESC | KEY_BOMB | KEY_RETURN));

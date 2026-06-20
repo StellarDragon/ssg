@@ -56,6 +56,11 @@ constexpr const auto PRACTICE_INVINCIBLE = 2;
 constexpr const auto AUTOPLAY_OFF = 0;
 constexpr const auto AUTOPLAY_ON = 1;
 
+// AutoPlay AI difficulty (mirrors AutoPlayController::DIFFICULTY_*)
+constexpr const auto AUTOPLAY_DIFFICULTY_EASY = 0;
+constexpr const auto AUTOPLAY_DIFFICULTY_NORMAL = 1;
+constexpr const auto AUTOPLAY_DIFFICULTY_HARD = 2;
+
 bool ValidateAlways(auto v) { return true; };
 template <typename T, T Max> constexpr bool ValidateBelow(T v) {
   return (v <= Max);
@@ -119,6 +124,10 @@ struct CONFIG_DATA {
 
   // AutoPlay: OFF/ON
   OPTION<uint8_t> AutoPlay = {AUTOPLAY_OFF, U8Below<AUTOPLAY_ON>};
+
+  // AutoPlay AI strength: EASY/NORMAL/HARD
+  OPTION<uint8_t> AutoPlayDifficulty = {AUTOPLAY_DIFFICULTY_NORMAL,
+                                        U8Below<AUTOPLAY_DIFFICULTY_HARD>};
 
   // Graphics settings
   OPTION<uint8_t> DeviceID = {0}; // Device index

@@ -92,7 +92,7 @@ static constexpr auto CFG_OPTIONS =
              ConfigDat.BGMPack, ConfigDat.MidFlags, ConfigDat.GraphicsAPI,
              ConfigDat.WindowScale4x, ConfigDat.WindowLeft, ConfigDat.WindowTop,
              ConfigDat.ScreenshotEffort, ConfigDat.PracticeMode,
-             ConfigDat.AutoPlay);
+             ConfigDat.AutoPlay, ConfigDat.AutoPlayDifficulty);
 
 static bool ConfigFileLoad() {
   SDL_IOStream *f = SDL_IOFromFile(CFG_FN, "rb");

@@ -61,6 +61,12 @@ constexpr const auto AUTOPLAY_DIFFICULTY_EASY = 0;
 constexpr const auto AUTOPLAY_DIFFICULTY_NORMAL = 1;
 constexpr const auto AUTOPLAY_DIFFICULTY_HARD = 2;
 
+// AutoPlay strategy id (must match the kStrategies[] order in
+// autoplay/strategy_registry.cpp)
+constexpr const auto AUTOPLAY_STRATEGY_GREEDY = 0;
+constexpr const auto AUTOPLAY_STRATEGY_REACHABILITY = 1;
+constexpr const auto AUTOPLAY_STRATEGY_MAX = AUTOPLAY_STRATEGY_REACHABILITY;
+
 bool ValidateAlways(auto v) { return true; };
 template <typename T, T Max> constexpr bool ValidateBelow(T v) {
   return (v <= Max);
@@ -128,6 +134,10 @@ struct CONFIG_DATA {
   // AutoPlay AI strength: EASY/NORMAL/HARD
   OPTION<uint8_t> AutoPlayDifficulty = {AUTOPLAY_DIFFICULTY_NORMAL,
                                         U8Below<AUTOPLAY_DIFFICULTY_HARD>};
+
+  // AutoPlay algorithm (see AUTOPLAY_STRATEGY_*)
+  OPTION<uint8_t> AutoPlayStrategy = {AUTOPLAY_STRATEGY_GREEDY,
+                                      U8Below<AUTOPLAY_STRATEGY_MAX>};
 
   // Graphics settings
   OPTION<uint8_t> DeviceID = {0}; // Device index

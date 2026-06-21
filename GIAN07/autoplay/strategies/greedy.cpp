@@ -416,35 +416,47 @@ int GreedyStrategy::FindBestDirection(
     const std::vector<BulletPrediction> &predictions, int player_x,
     int player_y, int speed, int &best_score) {
 
-  int best_dir = 0;
-  best_score = -1;
-
   int scores[NUM_CANDIDATES];
-
   for (int dir = 0; dir < NUM_CANDIDATES; dir++) {
     scores[dir] = EvaluateCandidate(predictions, dir, player_x, player_y,
                                     speed);
-    if (scores[dir] > best_score ||
-        (scores[dir] == best_score && dir == prev_dir_)) {
-      best_score = scores[dir];
+  }
+
+  const int home_x = (SX_MIN + SX_MAX) / 2;
+  const int home_y = SY_MAX - (10 * 64);
+
+  // Build a composite cost per direction so equal-safety moves prefer the one
+  // that brings the player closest to home. Scale: 1 cost-unit ~= 64 game
+  // units; safety dominates (one extra safe frame is worth more than walking
+  // across the field).
+  const int frames = GetPredictFrames();
+  const int dist_to_home = std::abs(player_x - home_x) +
+                           std::abs(player_y - home_y);
+  // Penalty per unsafe frame, in game units. Make it large enough to dwarf
+  // any plausible centering term, but not so large it overflows.
+  const int unsafe_penalty = std::max(dist_to_home, 64 * 64) + 1;
+
+  int best_dir = 0;
+  int best_cost = (1 << 30);
+  for (int dir = 0; dir < NUM_CANDIDATES; dir++) {
+    const int step_x = GetStepX(dir, speed);
+    const int step_y = GetStepY(dir, speed);
+    const int next_x = player_x + step_x;
+    const int next_y = player_y + step_y;
+    const int next_home_dist = std::abs(next_x - home_x) +
+                               std::abs(next_y - home_y);
+    const int unsafe = frames - scores[dir];
+    int cost = unsafe * unsafe_penalty + next_home_dist;
+    // Tiny tiebreaker: prefer keeping previous direction to suppress jitter.
+    if (dir == prev_dir_) {
+      cost -= 1;
+    }
+    if (cost < best_cost) {
+      best_cost = cost;
       best_dir = dir;
     }
   }
-
-  int home_x = (SX_MIN + SX_MAX) / 2;
-  int home_y = SY_MAX - (10 * 64);
-  int home_dir = DirectionToward(player_x, player_y, home_x, home_y);
-
-  if (home_dir != 0 && home_dir != best_dir) {
-    if (scores[home_dir] >= best_score) {
-      best_dir = home_dir;
-      best_score = scores[home_dir];
-    } else if (best_score >= GetPredictFrames() &&
-               scores[home_dir] >= GetPredictFrames() - 1) {
-      best_dir = home_dir;
-      best_score = scores[home_dir];
-    }
-  }
+  best_score = scores[best_dir];
 
   return best_dir;
 }

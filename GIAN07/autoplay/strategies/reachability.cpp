@@ -329,6 +329,14 @@ bool ReachabilityStrategy::SelectTarget(int pcx, int pcy, int &tcx, int &tcy) {
   tcx = pcx;
   tcy = pcy;
 
+  // Two-tier scoring:
+  //   A. Cells whose survival reaches the full horizon ("fully safe"): pick
+  //      the one nearest the attack position; ties broken by lower arrival.
+  //   B. If no cell is fully safe, fall back to survival-weighted score with
+  //      a stronger attack-position pull than before.
+  // The huge constant offset keeps tier A strictly dominant over tier B.
+  constexpr int FULLY_SAFE_OFFSET = 1 << 20;
+
   for (int cy = 0; cy < grid_h_; cy++) {
     for (int cx = 0; cx < grid_w_; cx++) {
       const int idx = CellIndex(cx, cy);
@@ -348,13 +356,20 @@ bool ReachabilityStrategy::SelectTarget(int pcx, int pcy, int &tcx, int &tcy) {
         continue;
       }
 
-      // Base score: survival heavily weighted, then early-arrival bonus.
-      int score = survive * 100 - arr * 5;
-
-      // Attack-position bias: prefer cells near (attack_cx, attack_cy).
       const int adx = std::abs(cx - attack_cx);
       const int ady = std::abs(cy - attack_cy);
-      score -= (adx + ady);
+      const int attack_cost = adx + ady;
+
+      const bool fully_safe = (arr + survive > horizon);
+      int score;
+      if (fully_safe) {
+        // Tier A: dominant constant + centering pull. Small arrival penalty
+        // breaks ties toward cells we can reach sooner.
+        score = FULLY_SAFE_OFFSET - attack_cost * 10 - arr;
+      } else {
+        // Tier B: weight survival, but give attack distance real influence.
+        score = survive * 50 - arr * 5 - attack_cost * 4;
+      }
 
       if (score > best_score) {
         best_score = score;

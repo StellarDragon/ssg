@@ -23,6 +23,11 @@ enum class PracticeMode : uint8_t {
   INVINCIBLE = 2,
 };
 
+enum class AutoPlayMode : uint8_t {
+  OFF = 0,
+  ON = 1,
+};
+
 struct ConfigData {
   // Difficulty settings
 
@@ -30,6 +35,7 @@ struct ConfigData {
   uint8_t player_stock = 2;
   uint8_t bomb_stock = 2;
   PracticeMode practice_mode = PracticeMode::OFF;
+  AutoPlayMode auto_play = AutoPlayMode::OFF;
 
   // Graphics settings
   uint8_t device_id = 0; // Device index

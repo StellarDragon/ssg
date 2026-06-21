@@ -12,6 +12,7 @@
 
 #include "audio/bgm.h"
 #include "audio/snd.h"
+#include "autoplay/autoplay.h"
 #include "core/config.h"
 #include "core/gian.h"
 #include "core/level.h"
@@ -942,6 +943,12 @@ void GameContinue() {
 }
 
 void GameProc(bool & /*unused*/) {
+  if (ConfigDat.auto_play == AutoPlayMode::ON && !Games.is_demoplay) {
+    INPUT_BITS real_input = Key_Data;
+    Key_Data = AutoPlay.Update();
+    Key_Data |= (real_input & (KEY_ESC | KEY_BOMB | KEY_RETURN));
+  }
+
   // Record current input (always-on multi-stage or legacy single-stage)
   const auto replay_over = Demos.Record(Key_Data);
 
@@ -975,6 +982,9 @@ void GameProc(bool & /*unused*/) {
 
   if (GameFlow.IsDraw()) {
     GameDraw();
+    if (ConfigDat.auto_play == AutoPlayMode::ON) {
+      GrpPut16(530, 470, "AUTO PLAY");
+    }
     if (Demos.save_all_enable) {
       constexpr PIXEL_LTRB rc = PIXEL_LTWH{288, 80, 24, 8};
       GrpSurface_Blit({128, 470}, SURFACE_ID::SYSTEM, rc);

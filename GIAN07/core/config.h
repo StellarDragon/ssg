@@ -65,7 +65,8 @@ constexpr const auto AUTOPLAY_DIFFICULTY_HARD = 2;
 // autoplay/strategy_registry.cpp)
 constexpr const auto AUTOPLAY_STRATEGY_GREEDY = 0;
 constexpr const auto AUTOPLAY_STRATEGY_REACHABILITY = 1;
-constexpr const auto AUTOPLAY_STRATEGY_MAX = AUTOPLAY_STRATEGY_REACHABILITY;
+constexpr const auto AUTOPLAY_STRATEGY_POTENTIAL = 2;
+constexpr const auto AUTOPLAY_STRATEGY_MAX = AUTOPLAY_STRATEGY_POTENTIAL;
 
 bool ValidateAlways(auto v) { return true; };
 template <typename T, T Max> constexpr bool ValidateBelow(T v) {

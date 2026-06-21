@@ -10,6 +10,7 @@
 
 #include "strategy_registry.h"
 #include "strategies/greedy.h"
+#include "strategies/potential.h"
 #include "strategies/reachability.h"
 
 #include <algorithm>
@@ -20,10 +21,12 @@ namespace {
 // Order MUST match AUTOPLAY_STRATEGY_* in core/config.h.
 GreedyStrategy g_greedy;
 ReachabilityStrategy g_reachability;
+PotentialFieldStrategy g_potential;
 
 IAutoPlayStrategy *const kStrategies[] = {
     &g_greedy,
     &g_reachability,
+    &g_potential,
 };
 
 constexpr int kCount =

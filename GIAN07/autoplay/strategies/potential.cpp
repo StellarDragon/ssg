@@ -192,9 +192,12 @@ void PotentialFieldStrategy::AccumulateLasers(Vec2 &force, int px, int py,
   }
 
   // Long lasers - infinite oriented beam, repulse from perpendicular foot.
+  // Warning-line (LLF_LINE) state is included with its eventual width so the
+  // field already pushes us off the line before it actually fires.
   for (int i = 0; i < LLASER_MAX; i++) {
     const LongLaserData &lp = Lasers.long_lasers[i];
-    if (lp.flag != LLF_OPEN && lp.flag != LLF_NORM) {
+    if (lp.flag != LLF_OPEN && lp.flag != LLF_NORM &&
+        lp.flag != LLF_LINE) {
       continue;
     }
     const int64_t tx = px - lp.x;
@@ -205,6 +208,8 @@ void PotentialFieldStrategy::AccumulateLasers(Vec2 &force, int px, int py,
     }
     const int64_t cx = lp.x + cosl(lp.d, along);
     const int64_t cy = lp.y + sinl(lp.d, along);
+    // LLF_LINE has w=0 in game terms but we treat it with full repulsion
+    // strength so the player is pushed clear before it actually fires.
     const int64_t d2 = Repulse(force.x, force.y, px, py, cx, cy, K_LASER);
     if (d2 < focus_sq && static_cast<int64_t>(min_dist_sq) > d2) {
       min_dist_sq = static_cast<int>(d2);

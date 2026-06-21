@@ -208,9 +208,13 @@ void ReachabilityStrategy::RasterizeLasers() {
   // Long lasers (infinite-length oriented beam from a fixed origin).
   for (int i = 0; i < LLASER_MAX; i++) {
     const LongLaserData &lp = Lasers.long_lasers[i];
-    if (lp.flag != LLF_OPEN && lp.flag != LLF_NORM) {
+    if (lp.flag != LLF_OPEN && lp.flag != LLF_NORM &&
+        lp.flag != LLF_LINE) {
       continue;
     }
+    // Pre-emptively rasterize the warning-line state at its eventual width
+    // so BFS routes the player off the line before it actually fires.
+    const int effective_w = (lp.flag == LLF_LINE) ? lp.wmax : lp.w;
     // Cover the beam to the edge of the play area.
     const int max_len = (SX_MAX - SX_MIN) + (SY_MAX - SY_MIN);
     const int steps = std::max(1, max_len / CELL_HALF);
@@ -223,7 +227,7 @@ void ReachabilityStrategy::RasterizeLasers() {
             sy < SY_MIN - CELL_SIZE || sy > SY_MAX + CELL_SIZE) {
           break;
         }
-        MarkBox(t, sx, sy, lp.w, lp.w);
+        MarkBox(t, sx, sy, effective_w, effective_w);
       }
     }
   }

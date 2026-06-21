@@ -375,14 +375,18 @@ int GreedyStrategy::EvaluateCandidate(
     // --- Long laser collision ---
     for (int i = 0; i < LLASER_MAX; i++) {
       const LongLaserData &lp = Lasers.long_lasers[i];
-      if (lp.flag != LLF_OPEN && lp.flag != LLF_NORM) {
+      if (lp.flag != LLF_OPEN && lp.flag != LLF_NORM &&
+          lp.flag != LLF_LINE) {
         continue;
       }
+      // Treat the warning-line state as already-deadly at its eventual
+      // (wmax) width so we have time to step off the line before it opens.
+      const int effective_w = (lp.flag == LLF_LINE) ? lp.wmax : lp.w;
       int ltx = px - lp.x;
       int lty = py - lp.y;
       int lproj = cosl(lp.d, ltx) + sinl(lp.d, lty);
       int lperp = std::abs(-sinl(lp.d, ltx) + cosl(lp.d, lty));
-      int lwid = lp.w + SAFETY_MARGIN_X;
+      int lwid = effective_w + SAFETY_MARGIN_X;
       if (lproj > 0 && lperp <= lwid) {
         return t;
       }

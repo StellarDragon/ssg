@@ -16,6 +16,7 @@ constexpr auto STOCK_PLAYER_MAX = 6;
 constexpr auto STOCK_BOMB_MAX = 6;
 constexpr auto FPS_DIVISOR_MAX = 3;
 constexpr auto STAGE_MAX = 6; // Number of stages
+constexpr auto AI_STRENGTH_MAX = 4; // AutoPlay AI strength levels 0..AI_STRENGTH_MAX
 
 enum class PracticeMode : uint8_t {
   OFF = 0,
@@ -36,6 +37,7 @@ struct ConfigData {
   uint8_t bomb_stock = 2;
   PracticeMode practice_mode = PracticeMode::OFF;
   AutoPlayMode auto_play = AutoPlayMode::OFF;
+  uint8_t ai_strength = 2; // AutoPlay AI strength: 0 (weak) .. AI_STRENGTH_MAX
 
   // Graphics settings
   uint8_t device_id = 0; // Device index

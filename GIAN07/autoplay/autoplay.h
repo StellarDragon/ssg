@@ -8,11 +8,15 @@
 
 class AutoPlayController {
 public:
-  static constexpr int DIFFICULTY_EASY = 0;
-  static constexpr int DIFFICULTY_NORMAL = 1;
-  static constexpr int DIFFICULTY_HARD = 2;
+  // AI strength levels: 0 (weakest) .. STRENGTH_MAX (strongest). A stronger AI
+  // looks further ahead, starts evading earlier, and bombs more reliably to
+  // avoid death.
+  static constexpr int STRENGTH_MIN = 0;
+  static constexpr int STRENGTH_MAX = 4;
+  static constexpr int STRENGTH_LEVELS = 5;
+  static constexpr int STRENGTH_DEFAULT = 2;
 
-  static constexpr int PREDICT_FRAMES = 6;
+  static constexpr int PREDICT_FRAMES = 7;
   static constexpr int NUM_CANDIDATES = 9;
 
   static constexpr int SAFETY_MARGIN_X = 256;
@@ -20,7 +24,7 @@ public:
   static constexpr int COLLISION_X = (2 * 64) + SAFETY_MARGIN_X;
   static constexpr int COLLISION_Y = (4 * 64) + SAFETY_MARGIN_Y;
 
-  void SetDifficulty(int level);
+  void SetStrength(int level);
 
   INPUT_BITS Update();
 
@@ -28,11 +32,6 @@ private:
   struct BulletPrediction {
     int x[PREDICT_FRAMES];
     int y[PREDICT_FRAMES];
-  };
-
-  struct CandidateResult {
-    int safe_frames;
-    int index;
   };
 
   struct TargetPoint {
@@ -43,9 +42,7 @@ private:
 
   int GetPredictFrames() const;
   int GetDangerThreshold() const;
-  int GetBombRadius() const;
-  int GetBombThreshold() const;
-  int GetGrazeRange() const;
+  int GetBombPanicScore() const;
 
   int GetPlayerSpeed(bool focused) const;
   static int GetStepX(int dir, int speed);
@@ -62,12 +59,10 @@ private:
   int DirectionToward(int player_x, int player_y, int target_x, int target_y);
 
   bool ShouldFocus(int best_score);
-  bool ShouldBomb(const std::vector<BulletPrediction> &predictions,
-                  int player_x, int player_y, int speed);
+  bool ShouldBomb(int best_score) const;
   void SteerTowardItems(INPUT_BITS &keys);
-  static INPUT_BITS DirectionToKeys(int dx, int dy);
 
-  int difficulty_ = DIFFICULTY_NORMAL;
+  int strength_ = STRENGTH_DEFAULT;
   int prev_dir_ = 0;
   uint8_t frame_counter_ = 0;
   bool bomb_this_frame_ = false;

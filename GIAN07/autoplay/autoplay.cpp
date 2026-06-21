@@ -16,63 +16,31 @@
 
 AutoPlayController AutoPlay;
 
-void AutoPlayController::SetDifficulty(int level) {
-  difficulty_ = std::clamp(level, DIFFICULTY_EASY, DIFFICULTY_HARD);
+void AutoPlayController::SetStrength(int level) {
+  strength_ = std::clamp(level, STRENGTH_MIN, STRENGTH_MAX);
 }
 
+// Lookahead horizon: a stronger AI predicts more frames ahead. Capped at
+// PREDICT_FRAMES.
 int AutoPlayController::GetPredictFrames() const {
-  switch (difficulty_) {
-  case DIFFICULTY_EASY:
-    return 6;
-  case DIFFICULTY_HARD:
-    return 4;
-  default:
-    return 5;
-  }
+  static constexpr int tbl[STRENGTH_LEVELS] = {3, 4, 5, 6, 7};
+  return tbl[strength_];
 }
 
+// Safe-frame count at/below which the AI switches to slow (focused) movement
+// for precise dodging. A stronger AI starts evading earlier (higher value).
 int AutoPlayController::GetDangerThreshold() const {
-  switch (difficulty_) {
-  case DIFFICULTY_EASY:
-    return 5;
-  case DIFFICULTY_HARD:
-    return 2;
-  default:
-    return 3;
-  }
+  static constexpr int tbl[STRENGTH_LEVELS] = {1, 2, 3, 4, 5};
+  return tbl[strength_];
 }
 
-int AutoPlayController::GetBombRadius() const {
-  switch (difficulty_) {
-  case DIFFICULTY_EASY:
-    return 80 * 64;
-  case DIFFICULTY_HARD:
-    return 35 * 64;
-  default:
-    return 55 * 64;
-  }
-}
-
-int AutoPlayController::GetBombThreshold() const {
-  switch (difficulty_) {
-  case DIFFICULTY_EASY:
-    return 3;
-  case DIFFICULTY_HARD:
-    return 8;
-  default:
-    return 5;
-  }
-}
-
-int AutoPlayController::GetGrazeRange() const {
-  switch (difficulty_) {
-  case DIFFICULTY_EASY:
-    return 75 * 64;
-  case DIFFICULTY_HARD:
-    return 45 * 64;
-  default:
-    return 60 * 64;
-  }
+// Best-direction safe-frame count at/below which the AI fires a bomb to escape
+// an otherwise-unavoidable hit. A stronger AI bombs more readily (and a hair
+// earlier) to survive; the weakest level (-1) never bombs proactively and dies
+// when truly trapped.
+int AutoPlayController::GetBombPanicScore() const {
+  static constexpr int tbl[STRENGTH_LEVELS] = {-1, 0, 1, 1, 2};
+  return tbl[strength_];
 }
 
 int AutoPlayController::GetPlayerSpeed(bool focused) const {
@@ -155,8 +123,7 @@ INPUT_BITS AutoPlayController::Update() {
                                  best_score);
   }
 
-  if (best_score <= GetDangerThreshold() && ShouldBomb(predictions, player_x,
-                                                        player_y, speed)) {
+  if (ShouldBomb(best_score)) {
     bomb_this_frame_ = true;
   }
 
@@ -189,10 +156,15 @@ INPUT_BITS AutoPlayController::Update() {
     }
   }
 
-  if (best_dir != prev_dir_ && best_score == prev_dir_ &&
-      EvaluateCandidate(predictions, prev_dir_, player_x, player_y, speed) >=
-          best_score) {
-    best_dir = prev_dir_;
+  // Anti-jitter hysteresis: keep the previous direction when it is at least as
+  // safe as the newly chosen one, to avoid vibrating between equally-safe
+  // options.
+  if (best_dir != prev_dir_) {
+    const int prev_score =
+        EvaluateCandidate(predictions, prev_dir_, player_x, player_y, speed);
+    if (prev_score >= best_score) {
+      best_dir = prev_dir_;
+    }
   }
   prev_dir_ = best_dir;
 
@@ -523,33 +495,14 @@ bool AutoPlayController::ShouldFocus(int best_score) {
   return best_score <= GetDangerThreshold();
 }
 
-bool AutoPlayController::ShouldBomb(
-    const std::vector<BulletPrediction> &predictions, int player_x,
-    int player_y, int speed) {
-  if (!Players.Bombs() || Players.IsInvincible() || Players.IsBombActive()) {
+bool AutoPlayController::ShouldBomb(int best_score) const {
+  if (Players.Bombs() == 0 || Players.IsInvincible() ||
+      Players.IsBombActive()) {
     return false;
   }
-
-  int bomb_radius = GetBombRadius();
-  int near_count = 0;
-  bool very_close = false;
-
-  for (const auto &p : predictions) {
-    int dx = p.x[0] - player_x;
-    int dy = p.y[0] - player_y;
-    int dist_sq = dx * dx + dy * dy;
-    int threshold = bomb_radius * bomb_radius;
-    if (dist_sq < threshold) {
-      near_count++;
-      if (dist_sq < threshold / 4) {
-        very_close = true;
-      }
-    }
-  }
-
-  int bomb_threshold = GetBombThreshold();
-  return (near_count >= bomb_threshold) ||
-         (very_close && near_count >= bomb_threshold / 2);
+  // No movement direction keeps the player safe long enough: fire a bomb to
+  // clear the screen and escape the otherwise-unavoidable hit.
+  return best_score <= GetBombPanicScore();
 }
 
 void AutoPlayController::SteerTowardItems(INPUT_BITS &keys) {
@@ -632,31 +585,4 @@ void AutoPlayController::SteerTowardItems(INPUT_BITS &keys) {
       break;
     }
   }
-}
-
-INPUT_BITS AutoPlayController::DirectionToKeys(int dx, int dy) {
-  const int dead = 64 * 2;
-
-  int adx = std::abs(dx);
-  int ady = std::abs(dy);
-
-  if (adx < dead && ady < dead) {
-    return 0;
-  }
-
-  INPUT_BITS keys = 0;
-
-  if (dy < -dead) {
-    keys |= KEY_UP;
-  } else if (dy > dead) {
-    keys |= KEY_DOWN;
-  }
-
-  if (dx < -dead) {
-    keys |= KEY_LEFT;
-  } else if (dx > dead) {
-    keys |= KEY_RIGHT;
-  }
-
-  return keys;
 }

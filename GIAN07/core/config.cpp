@@ -36,6 +36,7 @@ static constexpr bool ValidPracticeMode(PracticeMode v) {
 static constexpr bool ValidAutoPlayMode(AutoPlayMode v) {
   return std::to_underlying(v) <= std::to_underlying(AutoPlayMode::ON);
 }
+static constexpr bool ValidAiStrength(uint8_t v) { return v <= AI_STRENGTH_MAX; }
 static constexpr bool ValidFPSDivisor(uint8_t v) {
   return v <= FPS_DIVISOR_MAX;
 }
@@ -101,6 +102,7 @@ static bool TOMLLoad(const char *fn) {
     LoadToml(*sec, "bomb_stock", ConfigDat.bomb_stock, ValidBombStock);
     LoadToml(*sec, "practice_mode", ConfigDat.practice_mode, ValidPracticeMode);
     LoadToml(*sec, "auto_play", ConfigDat.auto_play, ValidAutoPlayMode);
+    LoadToml(*sec, "ai_strength", ConfigDat.ai_strength, ValidAiStrength);
   }
 
   // [graphics]
@@ -173,6 +175,7 @@ static void TOMLSave(const char *fn) {
     sec.emplace("bomb_stock", ConfigDat.bomb_stock);
     sec.emplace("practice_mode", std::to_underlying(ConfigDat.practice_mode));
     sec.emplace("auto_play", std::to_underlying(ConfigDat.auto_play));
+    sec.emplace("ai_strength", ConfigDat.ai_strength);
     tbl.emplace("difficulty", std::move(sec));
   }
 

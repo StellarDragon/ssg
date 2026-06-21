@@ -944,6 +944,7 @@ void GameContinue() {
 
 void GameProc(bool & /*unused*/) {
   if (ConfigDat.auto_play == AutoPlayMode::ON && !Games.is_demoplay) {
+    AutoPlay.SetStrength(ConfigDat.ai_strength);
     INPUT_BITS real_input = Key_Data;
     Key_Data = AutoPlay.Update();
     Key_Data |= (real_input & (KEY_ESC | KEY_BOMB | KEY_RETURN));
